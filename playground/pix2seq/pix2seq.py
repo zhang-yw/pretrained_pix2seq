@@ -87,7 +87,7 @@ class Pix2Seq(nn.Module):
             label_token = label.unsqueeze(1) + self.num_bins + 1
             scaled_box = box * scale_factor
             scaled_box = box_cxcywh_to_xyxy(scaled_box)
-            box_tokens = (scaled_box / 1333 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
+            box_tokens = (scaled_box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
             input_tokens = torch.cat([box_tokens, label_token], dim=1)
 
             num_objects = input_tokens.shape[0]
@@ -98,7 +98,7 @@ class Pix2Seq(nn.Module):
             random_box_wh = torch.rand(num_noise, 2, device=device)
             random_box_x1y1 = (random_box_x0y0 + random_box_wh).clamp(min=0, max=1)
             random_scaled_box = torch.cat([random_box_x0y0, random_box_x1y1], dim=1) * scale_factor
-            random_box_tokens = (random_scaled_box / 1333 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
+            random_box_tokens = (random_scaled_box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
             random_tokens = torch.cat([random_box_tokens, random_class], dim=1)
 
             if num_objects > 0:
@@ -109,7 +109,7 @@ class Pix2Seq(nn.Module):
                 jitter_box = box_cxcywh_to_xyxy(jitter_box)
                 jitter_box = (torch.rand((num_noise, 4), device=device) - 0.5) * 2 * 0.2 * jitter_box_wh + jitter_box
                 scaled_jitter_box = jitter_box.clamp(min=0, max=1.0) * scale_factor
-                jitter_box_tokens = (scaled_jitter_box / 1333 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
+                jitter_box_tokens = (scaled_jitter_box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
                 jitter_tokens = torch.cat([jitter_box_tokens, jitter_class], dim=1)
 
                 fake_tokens = torch.stack([random_tokens, jitter_tokens], dim=1)
@@ -156,7 +156,7 @@ class SetCriterion(nn.Module):
             label = label.unsqueeze(1) + self.num_bins + 1
             box = box * torch.stack([w, h, w, h], dim=0)
             box = box_cxcywh_to_xyxy(box)
-            box = (box / 1333 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
+            box = (box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
             target_tokens = torch.cat([box, label], dim=1).flatten()
 
             end_token = torch.tensor([self.num_vocal - 2], dtype=torch.int64).to(device)
@@ -250,7 +250,7 @@ class PostProcess(nn.Module):
             pred_boxes_logits = pred_seq_logits[:, :4, :self.num_bins + 1]
             pred_class_logits = pred_seq_logits[:, 4, self.num_bins + 1: self.num_bins + 1 + self.num_classes]
             scores_per_image, labels_per_image = torch.max(pred_class_logits, dim=1)
-            boxes_per_image = pred_boxes_logits.argmax(dim=2) * 1333 / self.num_bins
+            boxes_per_image = pred_boxes_logits.argmax(dim=2) * 640 / self.num_bins
             boxes_per_image = boxes_per_image * scale_fct[b_i]
             result = dict()
             result['scores'] = scores_per_image
@@ -279,7 +279,7 @@ def build(args):
 
     backbone = build_backbone(args)
 
-    num_bins = 2000
+    num_bins = 1000
     # 0 - num_bin coordinate, num_bin+1 - num_bin+num_class class,
     # num_bin+num_class+1 end, num_bin+num_class+2 noise
     num_vocal = num_bins + 1 + num_classes + 2
