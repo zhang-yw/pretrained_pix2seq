@@ -214,6 +214,9 @@ class SetCriterion(nn.Module):
             width  = box[:,2] - box[:,0]
             height = box[:,3] - box[:,1]
             radius = self.gaussian_radius((height, width))
+            print(radius.shape)
+            print(radius)
+            exit(0)
             target_tokens = torch.cat([box, label], dim=1).flatten()
 
             end_token = torch.tensor([self.num_vocal - 2], dtype=torch.int64).to(device)
@@ -259,8 +262,8 @@ class SetCriterion(nn.Module):
             # loss = loss - (pos_loss / num_pos + neg_loss / num_neg)
         return loss
 
-    def focal_loss(self, pred_seq_logits, target_seq):
-        pos_ends = 
+    # def focal_loss(self, pred_seq_logits, target_seq):
+        # pos_ends = 
 
     def forward(self, outputs, targets):
         """ This performs the loss computation.
@@ -269,6 +272,7 @@ class SetCriterion(nn.Module):
              targets: list of dicts, such that len(targets) == batch_size.
                       The expected keys in each dict depends on the losses applied, see each loss' doc
         """
+        focal_target_seq = self.build_focal_target_seq(targets)
         target_seq = self.build_target_seq(targets)
 
         # Compute the average number of target boxes accross all nodes, for normalization purposes
