@@ -262,8 +262,8 @@ class SetCriterion(nn.Module):
             # loss = loss - (pos_loss / num_pos + neg_loss / num_neg)
         return loss
 
-    def focal_loss(self, pred_seq_logits, target_seq):
-        pos_ends = 
+    # def focal_loss(self, pred_seq_logits, target_seq):
+        # pos_ends = 
 
     def forward(self, outputs, targets):
         """ This performs the loss computation.
