@@ -149,9 +149,9 @@ class SetCriterion(nn.Module):
         target_seq_list = []
         for target in targets:
             label = target["labels"]
-            print(label)
-            exit(0)
             box = target["boxes"]
+            print(box)
+            exit(0)
             img_size = target["size"]
             h, w = img_size[0], img_size[1]
 
