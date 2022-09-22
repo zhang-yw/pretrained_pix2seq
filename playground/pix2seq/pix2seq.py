@@ -13,7 +13,7 @@ from util.misc import (NestedTensor, nested_tensor_from_tensor_list,
 from .backbone import build_backbone
 from .transformer import build_transformer
 from util.box_ops import box_cxcywh_to_xyxy
-
+import numpy as np
 
 class Pix2Seq(nn.Module):
     """ This is the Pix2Seq module that performs object detection """
@@ -34,6 +34,7 @@ class Pix2Seq(nn.Module):
             nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=(1, 1)),
             nn.GroupNorm(32, hidden_dim))
         self.backbone = backbone
+        # self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, samples):
         """ 
@@ -62,6 +63,7 @@ class Pix2Seq(nn.Module):
         else:
             out = self.forward_inference(src, mask, pos[-1])
 
+        # out = {'pred_seq_logits': self.softmax(out)}
         out = {'pred_seq_logits': out}
         return out
 
@@ -139,9 +141,10 @@ class SetCriterion(nn.Module):
         self.num_bins = num_bins
         self.num_vocal = num_vocal
         self.num_classes = num_classes
-        empty_weight = torch.ones(self.num_vocal)
-        empty_weight[-1] = eos_coef
-        self.register_buffer('empty_weight', empty_weight)
+        # empty_weight = torch.ones(self.num_vocal)
+        # empty_weight[-1] = eos_coef
+        self.eos_coef = eos_coef
+        # self.register_buffer('empty_weight', empty_weight)
         self.weight_dict = weight_dict
 
     def build_target_seq(self, targets, max_objects=100):
@@ -157,6 +160,60 @@ class SetCriterion(nn.Module):
             box = box * torch.stack([w, h, w, h], dim=0)
             box = box_cxcywh_to_xyxy(box)
             box = (box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
+            target_tokens = torch.cat([box, label], dim=1).flatten()
+
+            end_token = torch.tensor([self.num_vocal - 2], dtype=torch.int64).to(device)
+
+            num_noise = max_objects - len(label)
+            fake_target_tokens = torch.zeros((num_noise, 5), dtype=torch.int64).to(device)
+            fake_target_tokens[:, :3] = -100
+            fake_target_tokens[:, 3] = self.num_vocal - 1  # noise class
+            fake_target_tokens[:, 4] = self.num_vocal - 2  # eos
+            fake_target_tokens = fake_target_tokens.flatten()
+
+            target_seq = torch.cat([target_tokens, end_token, fake_target_tokens], dim=0)
+            target_seq_list.append(target_seq)
+
+        return torch.stack(target_seq_list, dim=0)
+
+    def gaussian_radius(self, det_size, min_overlap=0.7):
+        height, width = det_size
+
+        a1  = 1
+        b1  = (height + width)
+        c1  = width * height * (1 - min_overlap) / (1 + min_overlap)
+        sq1 = np.sqrt(b1 ** 2 - 4 * a1 * c1)
+        r1  = (b1 + sq1) / 2
+
+        a2  = 4
+        b2  = 2 * (height + width)
+        c2  = (1 - min_overlap) * width * height
+        sq2 = np.sqrt(b2 ** 2 - 4 * a2 * c2)
+        r2  = (b2 + sq2) / 2
+
+        a3  = 4 * min_overlap
+        b3  = -2 * min_overlap * (height + width)
+        c3  = (min_overlap - 1) * width * height
+        sq3 = np.sqrt(b3 ** 2 - 4 * a3 * c3)
+        r3  = (b3 + sq3) / 2
+        return torch.minimum(r1, r2, r3)
+
+    def build_focal_target_seq(self, targets, max_objects=100):
+        device = targets[0]["labels"].device
+        target_seq_list = []
+        for target in targets:
+            label = target["labels"]
+            box = target["boxes"]
+            img_size = target["size"]
+            h, w = img_size[0], img_size[1]
+
+            label = label.unsqueeze(1) + self.num_bins + 1
+            box = box * torch.stack([w, h, w, h], dim=0)
+            box = box_cxcywh_to_xyxy(box)
+            box = (box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
+            width  = box[:,2] - box[:,0]
+            height = box[:,3] - box[:,1]
+            radius = self.gaussian_radius((height, width))
             target_tokens = torch.cat([box, label], dim=1).flatten()
 
             end_token = torch.tensor([self.num_vocal - 2], dtype=torch.int64).to(device)
@@ -202,6 +259,9 @@ class SetCriterion(nn.Module):
             # loss = loss - (pos_loss / num_pos + neg_loss / num_neg)
         return loss
 
+    def focal_loss(self, pred_seq_logits, target_seq):
+        pos_ends = 
+
     def forward(self, outputs, targets):
         """ This performs the loss computation.
         Parameters:
@@ -219,8 +279,8 @@ class SetCriterion(nn.Module):
         num_pos = torch.clamp(num_pos / get_world_size(), min=1).item()
 
         pred_seq_logits = outputs['pred_seq_logits']
-        print(pred_seq_logits[0])
-        exit(0)
+        # print(pred_seq_logits[0])
+        # exit(0)
 
         if isinstance(pred_seq_logits, list) and not self.training:
             num_pred_seq = [len(seq) for seq in pred_seq_logits]
@@ -230,14 +290,20 @@ class SetCriterion(nn.Module):
         else:
             pred_seq_logits = pred_seq_logits.reshape(-1, self.num_vocal)
             target_seq = target_seq.flatten()
-        print(pred_seq_logits.shape)
-        print(target_seq.shape)
+        # print(pred_seq_logits.shape)
+        # print(target_seq.shape)
 
         # self.empty_weight[0:self.num_bins+1] = 0.
+        empty_weight = torch.ones(self.num_vocal)
+        empty_weight[-1] = self.eos_coef
+        empty_weight[0:self.num_bins+1] = 0.
 
-        # loss_focal = 
+        # empty_weight_focal = torch.ones(self.num_vocal)
+        # empty_weight_focal[self.num_bins+1:] = 0.
 
-        loss_seq = F.cross_entropy(pred_seq_logits, target_seq, weight=self.empty_weight, reduction='sum') / num_pos
+        loss_seq = F.cross_entropy(pred_seq_logits, target_seq, weight=empty_weight, reduction='sum') 
+        loss_seq += self.focal_loss(pred_seq_logits.softmax(dim=-1), target_seq)
+        loss_seq = loss_seq/ num_pos
 
         # Compute all the requested losses
         losses = dict()
