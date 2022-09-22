@@ -199,7 +199,8 @@ class SetCriterion(nn.Module):
         else:
             pred_seq_logits = pred_seq_logits.reshape(-1, self.num_vocal)
             target_seq = target_seq.flatten()
-
+        print(pred_seq_logits.shape)
+        print(target_seq.shape)
         loss_seq = F.cross_entropy(pred_seq_logits, target_seq, weight=self.empty_weight, reduction='sum') / num_pos
 
         # Compute all the requested losses
