@@ -196,7 +196,7 @@ class SetCriterion(nn.Module):
         c3  = (min_overlap - 1) * width * height
         sq3 = torch.sqrt(b3 ** 2 - 4 * a3 * c3)
         r3  = (b3 + sq3) / 2
-        return torch.min(torch.stack(r1,r2,r3), 0).values
+        return torch.min(torch.stack((r1,r2,r3)), 0).values
 
     def build_focal_target_seq(self, targets, max_objects=100):
         device = targets[0]["labels"].device
