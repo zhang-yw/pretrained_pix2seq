@@ -218,6 +218,9 @@ class SetCriterion(nn.Module):
             # for object in range(box.size()[0]):
 
             target_tokens = torch.cat([box, label], dim=1).flatten()
+            print(target_tokens.shape)
+            print(target_tokens)
+            exit(0)
 
             end_token = torch.tensor([self.num_vocal - 2], dtype=torch.int64).to(device)
 
@@ -294,9 +297,9 @@ class SetCriterion(nn.Module):
         else:
             pred_seq_logits = pred_seq_logits.reshape(-1, self.num_vocal)
             target_seq = target_seq.flatten()
-        print(pred_seq_logits.shape)
-        print(target_seq.shape)
-        exit(0)
+        # print(pred_seq_logits.shape)
+        # print(target_seq.shape)
+        # exit(0)
 
         # self.empty_weight[0:self.num_bins+1] = 0.
         empty_weight = torch.ones(self.num_vocal)
