@@ -150,8 +150,6 @@ class SetCriterion(nn.Module):
         for target in targets:
             label = target["labels"]
             box = target["boxes"]
-            print(box)
-            exit(0)
             img_size = target["size"]
             h, w = img_size[0], img_size[1]
 
@@ -175,6 +173,35 @@ class SetCriterion(nn.Module):
 
         return torch.stack(target_seq_list, dim=0)
 
+    def _neg_loss(self, pred, gt):
+        ''' Modified focal loss. Exactly the same as CornerNet.
+            Runs faster and costs a little bit more memory
+            Arguments:
+            pred (batch x c x h x w)
+            gt_regr (batch x c x h x w)
+        '''
+        pos_inds = gt.eq(1).float()
+        neg_inds = gt.lt(1).float()
+
+        neg_weights = torch.pow(1 - gt, 4)
+
+        loss = 0
+
+        pos_loss = torch.log(pred) * torch.pow(1 - pred, 2) * pos_inds
+        neg_loss = torch.log(1 - pred) * torch.pow(pred, 2) * neg_weights * neg_inds
+
+        num_pos  = pos_inds.float().sum()
+        num_neg  = neg_inds.float().sum()
+        pos_loss = pos_loss.sum()
+        neg_loss = neg_loss.sum()
+
+        if num_pos == 0:
+            loss = loss - neg_loss
+        else:
+            loss = loss - (pos_loss + neg_loss) / num_pos
+            # loss = loss - (pos_loss / num_pos + neg_loss / num_neg)
+        return loss
+
     def forward(self, outputs, targets):
         """ This performs the loss computation.
         Parameters:
@@ -192,6 +219,8 @@ class SetCriterion(nn.Module):
         num_pos = torch.clamp(num_pos / get_world_size(), min=1).item()
 
         pred_seq_logits = outputs['pred_seq_logits']
+        print(pred_seq_logits[0])
+        exit(0)
 
         if isinstance(pred_seq_logits, list) and not self.training:
             num_pred_seq = [len(seq) for seq in pred_seq_logits]
@@ -203,6 +232,11 @@ class SetCriterion(nn.Module):
             target_seq = target_seq.flatten()
         print(pred_seq_logits.shape)
         print(target_seq.shape)
+
+        # self.empty_weight[0:self.num_bins+1] = 0.
+
+        # loss_focal = 
+
         loss_seq = F.cross_entropy(pred_seq_logits, target_seq, weight=self.empty_weight, reduction='sum') / num_pos
 
         # Compute all the requested losses
