@@ -13,7 +13,7 @@ from util.misc import (NestedTensor, nested_tensor_from_tensor_list,
 from .backbone import build_backbone
 from .transformer import build_transformer
 from util.box_ops import box_cxcywh_to_xyxy
-# import numpy as np
+import numpy as np
 
 class Pix2Seq(nn.Module):
     """ This is the Pix2Seq module that performs object detection """
@@ -198,6 +198,14 @@ class SetCriterion(nn.Module):
         r3  = (b3 + sq3) / 2
         return torch.min(torch.stack((r1,r2,r3)), 0).values
 
+    def gaussian1D(self, diameter, sigma=1):
+        radius = (diameter - 1.) / 2.
+        x = np.ogrid[-radius:radius+1]
+
+        h = np.exp(-(x * x) / (2 * sigma * sigma))
+        h[h < np.finfo(h.dtype).eps * h.max()] = 0
+        return h
+
     def build_focal_target_seq(self, targets, max_objects=100):
         device = targets[0]["labels"].device
         target_seq_list = []
@@ -216,11 +224,28 @@ class SetCriterion(nn.Module):
             radius = self.gaussian_radius((height, width))
 
             # for object in range(box.size()[0]):
+            focal_target_distributions = []
+
+            for object in range(box.size()[0]):
+                for i in range(4):
+                    distribution = torch.zeros(self.num_vocal)
+                    diameter = 2 * radius[object] + 1
+                    gaussian = self.gaussian1D(diameter, sigma=diameter / 6)
+                    gaussian = torch.from_numpy(gaussian)
+                    center = box[object][i]
+                    if i % 2 == 0: #x
+                        low, high = min(center, radius), min(width - center, radius + 1)
+                    else: #y
+                        low, high = min(center, radius), min(height - center, radius + 1)
+                    masked_distribution  = distribution[center - low:center + high]
+                    masked_gaussian = gaussian[radius - low:radius + high]
+                    if min(masked_gaussian.shape) > 0 and min(masked_distribution.shape) > 0: 
+                        distribution[center - low:center + high] = masked_gaussian
+                    print(distribution)
+                    exit(0)
+
 
             target_tokens = torch.cat([box, label], dim=1).flatten()
-            print(target_tokens.shape)
-            print(target_tokens)
-            exit(0)
 
             end_token = torch.tensor([self.num_vocal - 2], dtype=torch.int64).to(device)
 
