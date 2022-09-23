@@ -300,8 +300,8 @@ class SetCriterion(nn.Module):
         neg_loss = neg_loss.sum()
 
         loss = loss - (pos_loss + neg_loss)
-        print(loss)
-        exit(0)
+        # print(loss)
+        # exit(0)
         return loss
 
     def forward(self, outputs, targets):
