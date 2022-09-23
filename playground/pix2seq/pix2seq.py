@@ -235,8 +235,8 @@ class SetCriterion(nn.Module):
                     diameter = 2 * radius + 1
                     diameter = diameter.cpu().numpy()
                     gaussian = self.gaussian1D(diameter, sigma=diameter / 6)
-                    gaussian = torch.from_numpy(gaussian)
-                    print(gaussian)
+                    gaussian = torch.from_numpy(gaussian).to(device)
+                    # print(gaussian)
                     center = box[object][i]
                     width = img_size_arr[1]
                     height = img_size_arr[0]
@@ -259,20 +259,19 @@ class SetCriterion(nn.Module):
                 distribution = torch.zeros(self.num_vocal)
                 focal_target_distributions.append(distribution)
             target_distributions = torch.stack(focal_target_distributions, dim=0)
-            print(target_distributions.shape)
-            exit(0)
-            target_tokens = torch.cat([box, label], dim=1).flatten()
-
-            end_token = torch.tensor([self.num_vocal - 2], dtype=torch.int64).to(device)
+            # target_tokens = torch.cat([box, label], dim=1).flatten()
+            end_distribution = torch.zeros(self.num_vocal).to(device)
+            # end_token = torch.tensor([self.num_vocal - 2], dtype=torch.int64).to(device)
 
             num_noise = max_objects - len(label)
-            fake_target_tokens = torch.zeros((num_noise, 5), dtype=torch.int64).to(device)
-            fake_target_tokens[:, :3] = -100
-            fake_target_tokens[:, 3] = self.num_vocal - 1  # noise class
-            fake_target_tokens[:, 4] = self.num_vocal - 2  # eos
-            fake_target_tokens = fake_target_tokens.flatten()
+            fake_target_distributions = torch.zeros((num_noise*5, self.num_vocal)).to(device)
+            # fake_target_tokens = torch.zeros((num_noise, 5), dtype=torch.int64).to(device)
+            # fake_target_tokens[:, :3] = -100
+            # fake_target_tokens[:, 3] = self.num_vocal - 1  # noise class
+            # fake_target_tokens[:, 4] = self.num_vocal - 2  # eos
+            # fake_target_tokens = fake_target_tokens.flatten()
 
-            target_seq = torch.cat([target_tokens, end_token, fake_target_tokens], dim=0)
+            target_seq = torch.cat([target_distributions, end_distribution, fake_target_distributions], dim=0)
             target_seq_list.append(target_seq)
 
         return torch.stack(target_seq_list, dim=0)
@@ -306,8 +305,11 @@ class SetCriterion(nn.Module):
             # loss = loss - (pos_loss / num_pos + neg_loss / num_neg)
         return loss
 
-    # def focal_loss(self, pred_seq_logits, target_seq):
-        # pos_ends = 
+    def focal_loss(self, pred_seq_logits, focal_target_seq, target_seq):
+        print(pred_seq_logits.shape)
+        print(focal_target_seq.shape)
+        print(target_seq.shape)
+        exit(0)
 
     def forward(self, outputs, targets):
         """ This performs the loss computation.
@@ -335,9 +337,12 @@ class SetCriterion(nn.Module):
             pred_seq_logits = torch.cat(pred_seq_logits, dim=0).reshape(-1, self.num_vocal)
             target_seq = torch.cat(
                 [t_seq[:p_seq] for t_seq, p_seq in zip(target_seq, num_pred_seq)], dim=0)
+            focal_target_seq = torch.cat(
+                [t_seq[:p_seq] for t_seq, p_seq in zip(focal_target_seq, num_pred_seq)], dim=0)
         else:
             pred_seq_logits = pred_seq_logits.reshape(-1, self.num_vocal)
             target_seq = target_seq.flatten()
+            focal_target_seq = focal_target_seq.flatten()
         # print(pred_seq_logits.shape)
         # print(target_seq.shape)
         # exit(0)
@@ -351,7 +356,7 @@ class SetCriterion(nn.Module):
         # empty_weight_focal[self.num_bins+1:] = 0.
 
         loss_seq = F.cross_entropy(pred_seq_logits, target_seq, weight=empty_weight, reduction='sum') 
-        loss_seq += self.focal_loss(pred_seq_logits.sigmoid(), target_seq)
+        loss_seq += self.focal_loss(pred_seq_logits.sigmoid(), focal_target_seq, target_seq)
         loss_seq = loss_seq/ num_pos
 
         # Compute all the requested losses
