@@ -235,9 +235,9 @@ class SetCriterion(nn.Module):
                     gaussian = torch.from_numpy(gaussian)
                     center = box[object][i]
                     if i % 2 == 0: #x
-                        low, high = min(center, radius), min(width - center, radius + 1)
+                        low, high = torch.minimum(center, radius), torch.minimum(width - center, radius + 1)
                     else: #y
-                        low, high = min(center, radius), min(height - center, radius + 1)
+                        low, high = torch.minimum(center, radius), torch.minimum(height - center, radius + 1)
                     masked_distribution  = distribution[center - low:center + high]
                     masked_gaussian = gaussian[radius - low:radius + high]
                     if min(masked_gaussian.shape) > 0 and min(masked_distribution.shape) > 0: 
