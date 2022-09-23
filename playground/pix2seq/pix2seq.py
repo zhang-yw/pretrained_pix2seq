@@ -233,7 +233,7 @@ class SetCriterion(nn.Module):
                 for i in range(4):
                     distribution = torch.zeros(self.num_vocal)
                     radius = radius_arr[object]
-                    radius = max(0, radius.cpu().int())
+                    radius = max(0, radius.int())
                     diameter = 2 * radius + 1
                     # diameter = diameter.cpu().numpy()
                     gaussian = self.gaussian1D(diameter, sigma=diameter / 6)
