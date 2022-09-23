@@ -233,7 +233,7 @@ class SetCriterion(nn.Module):
                 for i in range(4):
                     distribution = torch.zeros(self.num_vocal)
                     radius = radius_arr[object]
-                    radius = max(0, radius.int())
+                    radius = max(0, radius.long())
                     diameter = 2 * radius + 1
                     print(radius)
                     exit(0)
