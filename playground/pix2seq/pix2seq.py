@@ -314,10 +314,23 @@ class SetCriterion(nn.Module):
         return loss
 
     def focal_loss(self, pred_seq_logits, focal_target_seq, target_seq):
-        print(pred_seq_logits.shape)
-        print(focal_target_seq.shape)
-        print(target_seq.shape)
+        pos_inds = focal_target_seq.eq(1).float()
+        neg_inds = focal_target_seq.lt(1).float()
+
+        neg_weights = torch.pow(1 - focal_target_seq, 4)
+
+        loss = 0
+
+        pos_loss = torch.log(pred_seq_logits) * torch.pow(1 - pred_seq_logits, 2) * pos_inds
+        neg_loss = torch.log(1 - pred_seq_logits) * torch.pow(pred_seq_logits, 2) * neg_weights * neg_inds
+
+        pos_loss = pos_loss.sum()
+        neg_loss = neg_loss.sum()
+
+        loss = loss - (pos_loss + neg_loss)
+        print(loss)
         exit(0)
+        return loss
 
     def forward(self, outputs, targets):
         """ This performs the loss computation.
