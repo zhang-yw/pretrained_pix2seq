@@ -235,7 +235,7 @@ class SetCriterion(nn.Module):
                     diameter = 2 * radius + 1
                     diameter = diameter.cpu().numpy()
                     gaussian = self.gaussian1D(diameter, sigma=diameter / 6)
-                    gaussian = torch.from_numpy(gaussian).to(device)
+                    gaussian = torch.from_numpy(gaussian)
                     # print(gaussian)
                     center = box[object][i]
                     width = img_size_arr[1]
@@ -258,7 +258,7 @@ class SetCriterion(nn.Module):
                     focal_target_distributions.append(distribution)
                 distribution = torch.zeros(self.num_vocal)
                 focal_target_distributions.append(distribution)
-            target_distributions = torch.stack(focal_target_distributions, dim=0)
+            target_distributions = torch.stack(focal_target_distributions, dim=0).to(device)
             # target_tokens = torch.cat([box, label], dim=1).flatten()
             end_distribution = torch.zeros(self.num_vocal).to(device)
             # end_token = torch.tensor([self.num_vocal - 2], dtype=torch.int64).to(device)
