@@ -284,38 +284,10 @@ class SetCriterion(nn.Module):
 
         return torch.stack(target_seq_list, dim=0)
 
-    def _neg_loss(self, pred, gt):
-        ''' Modified focal loss. Exactly the same as CornerNet.
-            Runs faster and costs a little bit more memory
-            Arguments:
-            pred (batch x c x h x w)
-            gt_regr (batch x c x h x w)
-        '''
-        pos_inds = gt.eq(1).float()
-        neg_inds = gt.lt(1).float()
-
-        neg_weights = torch.pow(1 - gt, 4)
-
-        loss = 0
-
-        pos_loss = torch.log(pred) * torch.pow(1 - pred, 2) * pos_inds
-        neg_loss = torch.log(1 - pred) * torch.pow(pred, 2) * neg_weights * neg_inds
-
-        num_pos  = pos_inds.float().sum()
-        num_neg  = neg_inds.float().sum()
-        pos_loss = pos_loss.sum()
-        neg_loss = neg_loss.sum()
-
-        if num_pos == 0:
-            loss = loss - neg_loss
-        else:
-            loss = loss - (pos_loss + neg_loss) / num_pos
-            # loss = loss - (pos_loss / num_pos + neg_loss / num_neg)
-        return loss
-
     def focal_loss(self, pred_seq_logits, focal_target_seq, target_seq):
         pos_inds = focal_target_seq.eq(1).float()
         neg_inds = focal_target_seq.lt(1).float()
+        coordinate_inds = target_seq.lt(self.num_bins).float()
 
         neg_weights = torch.pow(1 - focal_target_seq, 4)
 
@@ -324,12 +296,14 @@ class SetCriterion(nn.Module):
         pos_loss = torch.log(pred_seq_logits) * torch.pow(1 - pred_seq_logits, 2) * pos_inds
         neg_loss = torch.log(1 - pred_seq_logits) * torch.pow(pred_seq_logits, 2) * neg_weights * neg_inds
 
+        print(pos_loss.shape)
+        print(neg_loss.shape)
+        print(coordinate_inds.shape)
+        exit(0)
         pos_loss = pos_loss.sum()
         neg_loss = neg_loss.sum()
 
         loss = loss - (pos_loss + neg_loss)
-        print(loss)
-        exit(0)
         return loss
 
     def forward(self, outputs, targets):
