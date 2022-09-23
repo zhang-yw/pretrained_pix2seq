@@ -243,10 +243,10 @@ class SetCriterion(nn.Module):
                     center = box[object][i]
                     width = img_size_arr[1]
                     height = img_size_arr[0]
-                    print(center)
-                    print(width)
-                    print(radius)
-                    exit(0)
+                    # print(center)
+                    # print(width)
+                    # print(radius)
+                    # exit(0)
                     if i % 2 == 0: #x
                         low, high = torch.minimum(center, radius), torch.minimum(width - center, radius + 1)
                     else: #y
