@@ -260,7 +260,7 @@ class SetCriterion(nn.Module):
                 focal_target_distributions.append(distribution)
             target_distributions = torch.stack(focal_target_distributions, dim=0).to(device)
             # target_tokens = torch.cat([box, label], dim=1).flatten()
-            end_distribution = torch.zeros(self.num_vocal).to(device)
+            end_distribution = torch.zeros((1, self.num_vocal)).to(device)
             # end_token = torch.tensor([self.num_vocal - 2], dtype=torch.int64).to(device)
 
             num_noise = max_objects - len(label)
