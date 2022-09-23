@@ -199,9 +199,10 @@ class SetCriterion(nn.Module):
         return torch.min(torch.stack((r1,r2,r3)), 0).values
 
     def gaussian1D(self, diameter, sigma):
+        device = diameter.device
         radius = (diameter - 1.) / 2.
         # x = np.ogrid[-radius:radius+1]
-        x = torch.linspace(-radius,radius,diameter)
+        x = torch.linspace(-radius,radius,diameter).to(device)
 
         h = torch.exp(-(x * x) / (2 * sigma * sigma))
         h[h < torch.finfo(h.dtype).eps * h.max()] = 0
