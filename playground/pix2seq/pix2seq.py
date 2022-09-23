@@ -198,8 +198,7 @@ class SetCriterion(nn.Module):
         r3  = (b3 + sq3) / 2
         return torch.min(torch.stack((r1,r2,r3)), 0).values
 
-    def gaussian1D(self, diameter, sigma):
-        device = diameter.device
+    def gaussian1D(self, diameter, sigma, device):
         radius = (diameter - 1.) / 2.
         # x = np.ogrid[-radius:radius+1]
         x = torch.linspace(-radius,radius,diameter).to(device)
@@ -237,7 +236,7 @@ class SetCriterion(nn.Module):
                     radius = max(0, radius.long())
                     diameter = 2 * radius + 1
                     # diameter = diameter.cpu().numpy()
-                    gaussian = self.gaussian1D(diameter, diameter / 6)
+                    gaussian = self.gaussian1D(diameter, diameter / 6, device)
                     # gaussian = torch.from_numpy(gaussian)
                     # print(gaussian)
                     center = box[object][i]
