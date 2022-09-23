@@ -236,7 +236,7 @@ class SetCriterion(nn.Module):
                     diameter = 2 * radius + 1
                     # diameter = diameter.cpu().numpy()
                     gaussian = self.gaussian1D(diameter, sigma=diameter / 6)
-                    gaussian = torch.from_numpy(gaussian)
+                    # gaussian = torch.from_numpy(gaussian)
                     # print(gaussian)
                     center = box[object][i]
                     width = img_size_arr[1]
