@@ -204,7 +204,7 @@ class SetCriterion(nn.Module):
         x = torch.linspace(-radius,radius,diameter)
 
         h = torch.exp(-(x * x) / (2 * sigma * sigma))
-        h[h < torch.finfo(h.type).eps * h.max()] = 0
+        h[h < torch.finfo(h.dtype).eps * h.max()] = 0
         return h
 
     def build_focal_target_seq(self, targets, max_objects=100):
