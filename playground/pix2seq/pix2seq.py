@@ -221,7 +221,7 @@ class SetCriterion(nn.Module):
             box = (box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
             width_arr  = box[:,2] - box[:,0]
             height_arr = box[:,3] - box[:,1]
-            radius = self.gaussian_radius((height_arr, width_arr))
+            radius_arr = self.gaussian_radius((height_arr, width_arr))
 
             # for object in range(box.size()[0]):
             focal_target_distributions = []
@@ -229,7 +229,8 @@ class SetCriterion(nn.Module):
             for object in range(box.size()[0]):
                 for i in range(4):
                     distribution = torch.zeros(self.num_vocal)
-                    diameter = 2 * radius[object] + 1
+                    radius = radius_arr[object]
+                    diameter = 2 * radius + 1
                     diameter = diameter.cpu().numpy()
                     gaussian = self.gaussian1D(diameter, sigma=diameter / 6)
                     gaussian = torch.from_numpy(gaussian)
