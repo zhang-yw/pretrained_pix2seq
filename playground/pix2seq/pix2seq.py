@@ -196,7 +196,7 @@ class SetCriterion(nn.Module):
         c3  = (min_overlap - 1) * width * height
         sq3 = torch.sqrt(b3 ** 2 - 4 * a3 * c3)
         r3  = (b3 + sq3) / 2
-        return torch.min(torch.stack((r1,r2,r3)), 0).values
+        return torch.min(torch.stack((r1,r2,r3)), 0)
 
     def gaussian1D(self, diameter, sigma=1):
         radius = (diameter - 1.) / 2.
