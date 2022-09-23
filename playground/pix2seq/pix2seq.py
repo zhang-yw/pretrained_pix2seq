@@ -363,6 +363,10 @@ class SetCriterion(nn.Module):
 
         # empty_weight_focal = torch.ones(self.num_vocal)
         # empty_weight_focal[self.num_bins+1:] = 0.
+        print(pred_seq_logits.device)
+        print(target_seq.device)
+        print(empty_weight.device)
+        exit(0)
 
         loss_seq = F.cross_entropy(pred_seq_logits, target_seq, weight=empty_weight, reduction='sum') 
         loss_seq += self.focal_loss(pred_seq_logits.sigmoid(), focal_target_seq, target_seq)
