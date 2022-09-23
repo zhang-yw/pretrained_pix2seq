@@ -287,23 +287,21 @@ class SetCriterion(nn.Module):
     def focal_loss(self, pred_seq_logits, focal_target_seq, target_seq):
         pos_inds = focal_target_seq.eq(1).float()
         neg_inds = focal_target_seq.lt(1).float()
-        coordinate_inds = target_seq.lt(self.num_bins).float()
+        coordinate_inds = target_seq.lt(self.num_bins).float().unsqueeze(1)
 
         neg_weights = torch.pow(1 - focal_target_seq, 4)
 
         loss = 0
 
-        pos_loss = torch.log(pred_seq_logits) * torch.pow(1 - pred_seq_logits, 2) * pos_inds
-        neg_loss = torch.log(1 - pred_seq_logits) * torch.pow(pred_seq_logits, 2) * neg_weights * neg_inds
+        pos_loss = torch.log(pred_seq_logits) * torch.pow(1 - pred_seq_logits, 2) * pos_inds * coordinate_inds
+        neg_loss = torch.log(1 - pred_seq_logits) * torch.pow(pred_seq_logits, 2) * neg_weights * neg_inds * coordinate_inds
 
-        print(pos_loss.shape)
-        print(neg_loss.shape)
-        print(coordinate_inds.shape)
-        exit(0)
         pos_loss = pos_loss.sum()
         neg_loss = neg_loss.sum()
 
         loss = loss - (pos_loss + neg_loss)
+        print(loss)
+        exit(0)
         return loss
 
     def forward(self, outputs, targets):
