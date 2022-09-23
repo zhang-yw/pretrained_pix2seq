@@ -238,6 +238,10 @@ class SetCriterion(nn.Module):
                         low, high = torch.minimum(center, radius), torch.minimum(width - center, radius + 1)
                     else: #y
                         low, high = torch.minimum(center, radius), torch.minimum(height - center, radius + 1)
+                    print(center)
+                    print(low)
+                    print(high)
+                    exit(0)
                     masked_distribution  = distribution[center - low:center + high]
                     masked_gaussian = gaussian[radius - low:radius + high]
                     if min(masked_gaussian.shape) > 0 and min(masked_distribution.shape) > 0: 
