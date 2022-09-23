@@ -230,6 +230,7 @@ class SetCriterion(nn.Module):
                 for i in range(4):
                     distribution = torch.zeros(self.num_vocal)
                     diameter = 2 * radius[object] + 1
+                    diameter = diameter.numpy()
                     gaussian = self.gaussian1D(diameter, sigma=diameter / 6)
                     gaussian = torch.from_numpy(gaussian)
                     center = box[object][i]
