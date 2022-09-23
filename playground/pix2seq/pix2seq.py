@@ -247,9 +247,9 @@ class SetCriterion(nn.Module):
                     # print(radius)
                     # exit(0)
                     if i % 2 == 0: #x
-                        low, high = torch.minimum(center, radius), torch.minimum(width - center, radius + 1)
+                        low, high = min(center, radius), min(width - center, radius + 1)
                     else: #y
-                        low, high = torch.minimum(center, radius), torch.minimum(height - center, radius + 1)
+                        low, high = min(center, radius), min(height - center, radius + 1)
                     # print(center)
                     # print(low)
                     # print(high)
