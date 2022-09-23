@@ -237,6 +237,7 @@ class SetCriterion(nn.Module):
                     radius = max(0, radius.long())
                     diameter = 2 * radius + 1
                     print(diameter)
+                    exit(0)
                     # diameter = diameter.cpu().numpy()
                     gaussian = self.gaussian1D(diameter, sigma=diameter / 6)
                     # gaussian = torch.from_numpy(gaussian)
