@@ -223,6 +223,7 @@ class SetCriterion(nn.Module):
             width_arr  = box[:,2] - box[:,0]
             height_arr = box[:,3] - box[:,1]
             radius_arr = self.gaussian_radius((height_arr, width_arr))
+            print(radius_arr.shape)
 
             # for object in range(box.size()[0]):
             focal_target_distributions = []
