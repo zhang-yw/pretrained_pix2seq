@@ -252,11 +252,15 @@ class SetCriterion(nn.Module):
                     masked_gaussian = gaussian[radius - low:radius + high]
                     if min(masked_gaussian.shape) > 0 and min(masked_distribution.shape) > 0: 
                         distribution[center - low:center + high] = masked_gaussian
-                    print(distribution)
-                    print(distribution.sum())
-                    exit(0)
-
-
+                    # print(distribution)
+                    # print(distribution.sum())
+                    # exit(0)
+                    focal_target_distributions.append(distribution)
+                distribution = torch.zeros(self.num_vocal)
+                focal_target_distributions.append(distribution)
+            target_distributions = torch.stack(focal_target_distributions, dim=0)
+            print(target_distributions.shape)
+            exit(0)
             target_tokens = torch.cat([box, label], dim=1).flatten()
 
             end_token = torch.tensor([self.num_vocal - 2], dtype=torch.int64).to(device)
@@ -347,7 +351,7 @@ class SetCriterion(nn.Module):
         # empty_weight_focal[self.num_bins+1:] = 0.
 
         loss_seq = F.cross_entropy(pred_seq_logits, target_seq, weight=empty_weight, reduction='sum') 
-        loss_seq += self.focal_loss(pred_seq_logits.softmax(dim=-1), target_seq)
+        loss_seq += self.focal_loss(pred_seq_logits.sigmoid(), target_seq)
         loss_seq = loss_seq/ num_pos
 
         # Compute all the requested losses
