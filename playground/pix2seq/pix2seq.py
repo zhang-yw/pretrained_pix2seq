@@ -219,9 +219,9 @@ class SetCriterion(nn.Module):
             box = box * torch.stack([w, h, w, h], dim=0)
             box = box_cxcywh_to_xyxy(box)
             box = (box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
-            width  = box[:,2] - box[:,0]
-            height = box[:,3] - box[:,1]
-            radius = self.gaussian_radius((height, width))
+            width_arr  = box[:,2] - box[:,0]
+            height_arr = box[:,3] - box[:,1]
+            radius = self.gaussian_radius((height_arr, width_arr))
 
             # for object in range(box.size()[0]):
             focal_target_distributions = []
@@ -234,14 +234,16 @@ class SetCriterion(nn.Module):
                     gaussian = self.gaussian1D(diameter, sigma=diameter / 6)
                     gaussian = torch.from_numpy(gaussian)
                     center = box[object][i]
+                    width = width_arr[object]
+                    height = height_arr[object]
                     if i % 2 == 0: #x
                         low, high = torch.minimum(center, radius), torch.minimum(width - center, radius + 1)
                     else: #y
                         low, high = torch.minimum(center, radius), torch.minimum(height - center, radius + 1)
-                    print(center)
-                    print(low)
-                    print(high)
-                    exit(0)
+                    # print(center)
+                    # print(low)
+                    # print(high)
+                    # exit(0)
                     masked_distribution  = distribution[center - low:center + high]
                     masked_gaussian = gaussian[radius - low:radius + high]
                     if min(masked_gaussian.shape) > 0 and min(masked_distribution.shape) > 0: 
