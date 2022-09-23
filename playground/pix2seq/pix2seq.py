@@ -225,6 +225,7 @@ class SetCriterion(nn.Module):
 
             # for object in range(box.size()[0]):
             focal_target_distributions = []
+            img_size_arr = (box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
 
             for object in range(box.size()[0]):
                 for i in range(4):
@@ -235,8 +236,8 @@ class SetCriterion(nn.Module):
                     gaussian = self.gaussian1D(diameter, sigma=diameter / 6)
                     gaussian = torch.from_numpy(gaussian)
                     center = box[object][i]
-                    width = width_arr[object]
-                    height = height_arr[object]
+                    width = img_size_arr[1]
+                    height = img_size_arr[0]
                     if i % 2 == 0: #x
                         low, high = torch.minimum(center, radius), torch.minimum(width - center, radius + 1)
                     else: #y
