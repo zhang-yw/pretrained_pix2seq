@@ -200,10 +200,11 @@ class SetCriterion(nn.Module):
 
     def gaussian1D(self, diameter, sigma=1):
         radius = (diameter - 1.) / 2.
-        x = np.ogrid[-radius:radius+1]
+        # x = np.ogrid[-radius:radius+1]
+        x = torch.linspace(-radius,radius,diameter)
 
-        h = np.exp(-(x * x) / (2 * sigma * sigma))
-        h[h < np.finfo(h.dtype).eps * h.max()] = 0
+        h = torch.exp(-(x * x) / (2 * sigma * sigma))
+        h[h < torch.finfo(h.type).eps * h.max()] = 0
         return h
 
     def build_focal_target_seq(self, targets, max_objects=100):
