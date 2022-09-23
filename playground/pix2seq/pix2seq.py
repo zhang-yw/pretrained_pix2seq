@@ -266,7 +266,7 @@ class SetCriterion(nn.Module):
             if len(label) > 0:
                 target_distributions = torch.stack(focal_target_distributions, dim=0).to(device)
             else:
-                target_distributions = torch.tenor([]).to(device)
+                target_distributions = torch.tensor([]).to(device)
             # target_tokens = torch.cat([box, label], dim=1).flatten()
             end_distribution = torch.zeros((1, self.num_vocal)).to(device)
             # end_token = torch.tensor([self.num_vocal - 2], dtype=torch.int64).to(device)
