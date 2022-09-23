@@ -228,7 +228,9 @@ class SetCriterion(nn.Module):
             # for object in range(box.size()[0]):
             focal_target_distributions = []
             img_size_arr = (img_size / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
-
+            if(len(label) == 0):
+                print("zero boxes")
+                exit(0)
             for object in range(len(label)):
                 for i in range(4):
                     distribution = torch.zeros(self.num_vocal)
