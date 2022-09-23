@@ -350,7 +350,7 @@ class SetCriterion(nn.Module):
         else:
             pred_seq_logits = pred_seq_logits.reshape(-1, self.num_vocal)
             target_seq = target_seq.flatten()
-            focal_target_seq = focal_target_seq.flatten()
+            # focal_target_seq = focal_target_seq.flatten()
         # print(pred_seq_logits.shape)
         # print(target_seq.shape)
         # exit(0)
