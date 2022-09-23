@@ -229,7 +229,7 @@ class SetCriterion(nn.Module):
             focal_target_distributions = []
             img_size_arr = (img_size / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
 
-            for object in range(box.size()[0]):
+            for object in range(len(label)):
                 for i in range(4):
                     distribution = torch.zeros(self.num_vocal)
                     radius = radius_arr[object]
