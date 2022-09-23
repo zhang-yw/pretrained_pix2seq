@@ -225,7 +225,7 @@ class SetCriterion(nn.Module):
 
             # for object in range(box.size()[0]):
             focal_target_distributions = []
-            img_size_arr = (box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
+            img_size_arr = (img_size / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
 
             for object in range(box.size()[0]):
                 for i in range(4):
