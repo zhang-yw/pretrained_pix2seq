@@ -142,7 +142,7 @@ def make_coco_transforms(image_set, args):
         if args.large_scale_jitter:
             return T.Compose([
                 T.RandomHorizontalFlip(),
-                T.LargeScaleJitter(output_size=640, aug_scale_min=0.3, aug_scale_max=2.0),
+                T.LargeScaleJitter(output_size=1333, aug_scale_min=0.3, aug_scale_max=2.0),
                 T.RandomDistortion(0.5, 0.5, 0.5, 0.5),
                 normalize,
             ])
@@ -150,11 +150,11 @@ def make_coco_transforms(image_set, args):
             return T.Compose([
                 T.RandomHorizontalFlip(),
                 T.RandomSelect(
-                    T.RandomResize(scales, max_size=640),
+                    T.RandomResize(scales, max_size=1333),
                     T.Compose([
                         T.RandomResize([400, 500, 600]),
                         T.RandomSizeCrop(384, 600),
-                        T.RandomResize(scales, max_size=640),
+                        T.RandomResize(scales, max_size=1333),
                     ])
                 ),
                 normalize,
@@ -163,12 +163,12 @@ def make_coco_transforms(image_set, args):
     if image_set == 'val':
         if args.large_scale_jitter:
             return T.Compose([
-                T.LargeScaleJitter(output_size=640, aug_scale_min=1.0, aug_scale_max=1.0),
+                T.LargeScaleJitter(output_size=1333, aug_scale_min=1.0, aug_scale_max=1.0),
                 normalize,
             ])
         else:
             return T.Compose([
-                T.RandomResize([800], max_size=640),
+                T.RandomResize([800], max_size=1333),
                 normalize,
             ])
 
