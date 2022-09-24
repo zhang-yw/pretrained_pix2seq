@@ -315,7 +315,7 @@ class LargeScaleJitter(object):
         implementation of large scale jitter from copy_paste
     """
 
-    def __init__(self, output_size=640, aug_scale_min=0.3, aug_scale_max=2.0):
+    def __init__(self, output_size=1333, aug_scale_min=0.3, aug_scale_max=2.0):
         self.desired_size = torch.tensor(output_size)
         self.aug_scale_min = aug_scale_min
         self.aug_scale_max = aug_scale_max
