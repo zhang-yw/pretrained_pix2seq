@@ -222,7 +222,9 @@ class SetCriterion(nn.Module):
             box = (box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
             width_arr  = box[:,2] - box[:,0]
             height_arr = box[:,3] - box[:,1]
-            radius_arr = self.gaussian_radius((height_arr, width_arr))
+
+            if len(label) > 0:
+                radius_arr = self.gaussian_radius((height_arr, width_arr))
             # print(radius_arr.shape)
 
             # for object in range(box.size()[0]):
