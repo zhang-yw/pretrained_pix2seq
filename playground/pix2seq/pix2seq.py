@@ -324,7 +324,7 @@ class SetCriterion(nn.Module):
 
         # Compute the average number of target boxes accross all nodes, for normalization purposes
         num_pos = (target_seq > -1).sum()
-        num_pos = torch.as_tensor([num_pos], dtype=torch.float, device=outputs.device)
+        num_pos = torch.as_tensor([num_pos], dtype=torch.float, device=outputs['pred_seq_logits'].device)
         if is_dist_avail_and_initialized():
             torch.distributed.all_reduce(num_pos)
         num_pos = torch.clamp(num_pos / get_world_size(), min=1).item()
@@ -349,7 +349,7 @@ class SetCriterion(nn.Module):
         # exit(0)
 
         # self.empty_weight[0:self.num_bins+1] = 0.
-        empty_weight = torch.ones(self.num_vocal).to(outputs.device)
+        empty_weight = torch.ones(self.num_vocal).to(outputs['pred_seq_logits'].device)
         empty_weight[-1] = self.eos_coef
         empty_weight[0:self.num_bins+1] = 0.
 
