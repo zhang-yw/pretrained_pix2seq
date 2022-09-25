@@ -23,7 +23,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         self.large_scale_jitter = large_scale_jitter
         self.image_set = image_set
         self.num_bins = 1000
-        self.vocal = 1094
+        self.num_vocal = 1094
 
     def __getitem__(self, idx):
         img, target = super(CocoDetection, self).__getitem__(idx)
