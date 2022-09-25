@@ -314,8 +314,13 @@ class SetCriterion(nn.Module):
         """
         # focal_target_seq = self.build_focal_target_seq(targets)
         # target_seq = self.build_target_seq(targets)
-        focal_target_seq = targets["focal_target_seq"]
-        target_seq = targets["target_seq"]
+        focal_target_seq_list = []
+        target_seq_list = []
+        for target in targets:
+            focal_target_seq_list.append(target["focal_target_seq"])
+            target_seq_list.append(target["target_seq"])
+        focal_target_seq = torch.stack(focal_target_seq_list, dim=0)
+        target_seq = torch.stack(target_seq_list, dim=0)
 
         # Compute the average number of target boxes accross all nodes, for normalization purposes
         num_pos = (target_seq > -1).sum()
