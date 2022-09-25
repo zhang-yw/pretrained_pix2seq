@@ -351,8 +351,9 @@ class SetCriterion(nn.Module):
         # empty_weight_focal[self.num_bins+1:] = 0.
 
         loss_seq = F.cross_entropy(pred_seq_logits, target_seq, weight=empty_weight, reduction='sum') 
-        loss_seq += self.focal_loss(pred_seq_logits.sigmoid(), focal_target_seq, target_seq)
-        loss_seq = loss_seq/ num_pos
+        # loss_seq += self.focal_loss(pred_seq_logits.sigmoid(), focal_target_seq, target_seq)
+        loss_seq += self.focal_loss(torch.clamp(pred_seq_logits.sigmoid(), min=1e-4, max=1-1e-4), focal_target_seq, target_seq)
+        loss_seq = loss_seq / num_pos
 
         # Compute all the requested losses
         losses = dict()
