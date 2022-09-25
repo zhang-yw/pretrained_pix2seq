@@ -10,6 +10,7 @@ import torch
 import torch.utils.data
 import torchvision
 from pycocotools import mask as coco_mask
+from util.box_ops import box_cxcywh_to_xyxy
 
 import datasets.transforms as T
 
@@ -31,11 +32,161 @@ class CocoDetection(torchvision.datasets.CocoDetection):
             if self.large_scale_jitter and self.image_set == "train":
                 img1, target1 = self._transforms(img, target)
                 img2, target2 = self._transforms(img, target)
-                return img1, img2, target1, target2
+                return img1, img2, self.build_seqs(target1), self.build_seqs(target2)
             else:
                 img, target = self._transforms(img, target)
-                return img, target
-        return img, target
+                return img, self.build_seqs(target)
+        return img, self.build_seqs(target)
+
+    def build_target_seq(self, targets, max_objects=100):
+        device = targets[0]["labels"].device
+        target_seq_list = []
+        for target in targets:
+            label = target["labels"]
+            box = target["boxes"]
+            img_size = target["size"]
+            h, w = img_size[0], img_size[1]
+
+            label = label.unsqueeze(1) + self.num_bins + 1
+            box = box * torch.stack([w, h, w, h], dim=0)
+            box = box_cxcywh_to_xyxy(box)
+            box = (box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
+            target_tokens = torch.cat([box, label], dim=1).flatten()
+
+            end_token = torch.tensor([self.num_vocal - 2], dtype=torch.int64).to(device)
+
+            num_noise = max_objects - len(label)
+            fake_target_tokens = torch.zeros((num_noise, 5), dtype=torch.int64).to(device)
+            fake_target_tokens[:, :3] = -100
+            fake_target_tokens[:, 3] = self.num_vocal - 1  # noise class
+            fake_target_tokens[:, 4] = self.num_vocal - 2  # eos
+            fake_target_tokens = fake_target_tokens.flatten()
+
+            target_seq = torch.cat([target_tokens, end_token, fake_target_tokens], dim=0)
+            target_seq_list.append(target_seq)
+
+        return torch.stack(target_seq_list, dim=0)
+    
+    def gaussian_radius(self, det_size, min_overlap=0.7):
+        height, width = det_size
+
+        a1  = 1
+        b1  = (height + width)
+        c1  = width * height * (1 - min_overlap) / (1 + min_overlap)
+        sq1 = torch.sqrt(b1 ** 2 - 4 * a1 * c1)
+        r1  = (b1 + sq1) / 2
+
+        a2  = 4
+        b2  = 2 * (height + width)
+        c2  = (1 - min_overlap) * width * height
+        sq2 = torch.sqrt(b2 ** 2 - 4 * a2 * c2)
+        r2  = (b2 + sq2) / 2
+
+        a3  = 4 * min_overlap
+        b3  = -2 * min_overlap * (height + width)
+        c3  = (min_overlap - 1) * width * height
+        sq3 = torch.sqrt(b3 ** 2 - 4 * a3 * c3)
+        r3  = (b3 + sq3) / 2
+        return torch.min(torch.stack((r1,r2,r3)), 0).values
+
+    def gaussian1D(self, diameter, sigma, device):
+        radius = (diameter - 1.) / 2.
+        # x = np.ogrid[-radius:radius+1]
+        x = torch.linspace(-radius,radius,diameter).to(device)
+
+        h = torch.exp(-(x * x) / (2 * sigma * sigma))
+        h[h < torch.finfo(h.dtype).eps * h.max()] = 0
+        return h
+
+    def build_focal_target_seq(self, targets, max_objects=100):
+        device = targets[0]["labels"].device
+        target_seq_list = []
+        for target in targets:
+            label = target["labels"]
+            box = target["boxes"]
+            img_size = target["size"]
+            h, w = img_size[0], img_size[1]
+
+            label = label.unsqueeze(1) + self.num_bins + 1
+            box = box * torch.stack([w, h, w, h], dim=0)
+            box = box_cxcywh_to_xyxy(box)
+            box = (box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
+            width_arr  = box[:,2] - box[:,0]
+            height_arr = box[:,3] - box[:,1]
+            if len(label) > 0:
+                radius_arr = self.gaussian_radius((height_arr, width_arr))
+            # print(radius_arr.shape)
+
+            # for object in range(box.size()[0]):
+            focal_target_distributions = []
+            img_size_arr = (img_size / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
+            for object in range(len(label)):
+                for i in range(4):
+                    distribution = torch.zeros(self.num_vocal)
+                    radius = radius_arr[object]
+                    radius = max(0, radius.long())
+                    diameter = 2 * radius + 1
+                    # diameter = diameter.cpu().numpy()
+                    gaussian = self.gaussian1D(diameter, diameter / 6, device)
+                    # gaussian = torch.from_numpy(gaussian)
+                    # print(gaussian)
+                    center = box[object][i]
+                    width = img_size_arr[1]
+                    height = img_size_arr[0]
+                    # print(center)
+                    # print(width)
+                    # print(radius)
+                    # exit(0)
+                    if i % 2 == 0: #x
+                        low, high = min(center, radius), min(width - center, radius + 1)
+                    else: #y
+                        low, high = min(center, radius), min(height - center, radius + 1)
+                    # print(center)
+                    # print(low)
+                    # print(high)
+                    # exit(0)
+                    masked_distribution  = distribution[center - low:center + high]
+                    masked_gaussian = gaussian[radius - low:radius + high]
+                    if min(masked_gaussian.shape) > 0 and min(masked_distribution.shape) > 0: 
+                        distribution[center - low:center + high] = masked_gaussian
+                    # print(distribution)
+                    # print(distribution.sum())
+                    # exit(0)
+                    focal_target_distributions.append(distribution)
+                distribution = torch.zeros(self.num_vocal)
+                focal_target_distributions.append(distribution)
+            if len(label) > 0:
+                target_distributions = torch.stack(focal_target_distributions, dim=0).to(device)
+            else:
+                target_distributions = torch.tensor([]).to(device)
+            # target_tokens = torch.cat([box, label], dim=1).flatten()
+            end_distribution = torch.zeros((1, self.num_vocal)).to(device)
+            # end_token = torch.tensor([self.num_vocal - 2], dtype=torch.int64).to(device)
+
+            num_noise = max_objects - len(label)
+            fake_target_distributions = torch.zeros((num_noise*5, self.num_vocal)).to(device)
+            # fake_target_tokens = torch.zeros((num_noise, 5), dtype=torch.int64).to(device)
+            # fake_target_tokens[:, :3] = -100
+            # fake_target_tokens[:, 3] = self.num_vocal - 1  # noise class
+            # fake_target_tokens[:, 4] = self.num_vocal - 2  # eos
+            # fake_target_tokens = fake_target_tokens.flatten()
+
+            target_seq = torch.cat([target_distributions, end_distribution, fake_target_distributions], dim=0)
+            target_seq_list.append(target_seq)
+
+        return torch.stack(target_seq_list, dim=0)
+
+    def build_seqs(self, target):
+        # focal_target_seq = self.build_focal_target_seq(targets)
+        # target_seq = self.build_target_seq(targets)
+        target = target.copy()
+        focal_target_seq = self.build_focal_target_seq(target)
+        target_seq = self.build_target_seq(target)
+        target["focal_target_seq"] = focal_target_seq
+        target["target_seq"] = target_seq
+        return target 
+
+
 
 
 def convert_coco_poly_to_mask(segmentations, height, width):

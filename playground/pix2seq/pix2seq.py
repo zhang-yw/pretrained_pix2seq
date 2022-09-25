@@ -312,8 +312,10 @@ class SetCriterion(nn.Module):
              targets: list of dicts, such that len(targets) == batch_size.
                       The expected keys in each dict depends on the losses applied, see each loss' doc
         """
-        focal_target_seq = self.build_focal_target_seq(targets)
-        target_seq = self.build_target_seq(targets)
+        # focal_target_seq = self.build_focal_target_seq(targets)
+        # target_seq = self.build_target_seq(targets)
+        focal_target_seq = targets["focal_target_seq"]
+        target_seq = targets["target_seq"]
 
         # Compute the average number of target boxes accross all nodes, for normalization purposes
         num_pos = (target_seq > -1).sum()
