@@ -50,7 +50,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         label = label.unsqueeze(1) + self.num_bins + 1
         box = box * torch.stack([w, h, w, h], dim=0)
         box = box_cxcywh_to_xyxy(box)
-        box = (box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
+        box = (box / 1333 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
         target_tokens = torch.cat([box, label], dim=1).flatten()
 
         end_token = torch.tensor([self.num_vocal - 2], dtype=torch.int64)
@@ -106,7 +106,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         label = label.unsqueeze(1) + self.num_bins + 1
         box = box * torch.stack([w, h, w, h], dim=0)
         box = box_cxcywh_to_xyxy(box)
-        box = (box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
+        box = (box / 1333 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
         width_arr  = box[:,2] - box[:,0]
         height_arr = box[:,3] - box[:,1]
         if len(label) > 0:
@@ -115,7 +115,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
 
         # for object in range(box.size()[0]):
         focal_target_distributions = []
-        img_size_arr = (img_size / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
+        img_size_arr = (img_size / 1333 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
         for object in range(len(label)):
             for i in range(4):
                 distribution = torch.zeros(self.num_vocal)
@@ -288,7 +288,7 @@ def make_coco_transforms(image_set, args):
         if args.large_scale_jitter:
             return T.Compose([
                 T.RandomHorizontalFlip(),
-                T.LargeScaleJitter(output_size=640, aug_scale_min=0.3, aug_scale_max=2.0),
+                T.LargeScaleJitter(output_size=1333, aug_scale_min=0.3, aug_scale_max=2.0),
                 T.RandomDistortion(0.5, 0.5, 0.5, 0.5),
                 normalize,
             ])
@@ -296,11 +296,11 @@ def make_coco_transforms(image_set, args):
             return T.Compose([
                 T.RandomHorizontalFlip(),
                 T.RandomSelect(
-                    T.RandomResize(scales, max_size=640),
+                    T.RandomResize(scales, max_size=1333),
                     T.Compose([
                         T.RandomResize([400, 500, 600]),
                         T.RandomSizeCrop(384, 600),
-                        T.RandomResize(scales, max_size=640),
+                        T.RandomResize(scales, max_size=1333),
                     ])
                 ),
                 normalize,
@@ -309,12 +309,12 @@ def make_coco_transforms(image_set, args):
     if image_set == 'val':
         if args.large_scale_jitter:
             return T.Compose([
-                T.LargeScaleJitter(output_size=640, aug_scale_min=1.0, aug_scale_max=1.0),
+                T.LargeScaleJitter(output_size=1333, aug_scale_min=1.0, aug_scale_max=1.0),
                 normalize,
             ])
         else:
             return T.Compose([
-                T.RandomResize([800], max_size=640),
+                T.RandomResize([800], max_size=1333),
                 normalize,
             ])
 
