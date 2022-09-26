@@ -438,7 +438,7 @@ def build(args):
 
     backbone = build_backbone(args)
 
-    num_bins = 1000
+    num_bins = 2000
     # 0 - num_bin coordinate, num_bin+1 - num_bin+num_class class,
     # num_bin+num_class+1 end, num_bin+num_class+2 noise
     num_vocal = num_bins + 1 + num_classes + 2
