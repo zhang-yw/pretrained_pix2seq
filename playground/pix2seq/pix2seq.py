@@ -290,7 +290,7 @@ class SetCriterion(nn.Module):
         pos_inds = focal_target_seq.eq(1).float()
         pos_inds_2 = focal_target_seq.gt(0.99).float()
         num_pos  = pos_inds.float().sum()
-        num_pos_2  = pos_inds.float().sum()
+        num_pos_2  = pos_inds_2.float().sum()
         print(num_pos, num_pos_2, pos_inds.shape)
 
         neg_inds = focal_target_seq.lt(1).float()
