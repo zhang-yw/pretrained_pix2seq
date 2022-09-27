@@ -292,7 +292,7 @@ class SetCriterion(nn.Module):
         coordinate_inds = target_seq.lt(self.num_bins+1).float().unsqueeze(1)
         coordinate_inds_2 = target_seq.gt(-0.5).float().unsqueeze(1)
         coordinate_inds = coordinate_inds*coordinate_inds_2
-        print(coordinate_inds.sum())
+        # print(coordinate_inds.sum())
         neg_weights = torch.pow(1 - focal_target_seq, 4)
 
         loss = 0
@@ -358,7 +358,7 @@ class SetCriterion(nn.Module):
         num_pos2 = (target_seq > -1).sum()
         ce_num = (target_seq > self.num_bins).sum()
         focal_num = num_pos2 - ce_num
-        print(num_pos2, ce_num, focal_num)
+        # print(num_pos2, ce_num, focal_num)
 
         # empty_weight_focal = torch.ones(self.num_vocal)
         # empty_weight_focal[self.num_bins+1:] = 0.
