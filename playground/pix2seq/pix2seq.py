@@ -353,10 +353,10 @@ class SetCriterion(nn.Module):
         empty_weight = torch.ones(self.num_vocal).to(self.device)
         empty_weight[-1] = self.eos_coef
         empty_weight[0:self.num_bins+1] = 0.
-
+        num_pos2 = (target_seq > -1).sum()
         ce_num = (target_seq > self.num_bins).sum()
-        focal_num = num_pos - ce_num
-        print(num_pos, ce_num, focal_num)
+        focal_num = num_pos2 - ce_num
+        print(num_pos2, ce_num, focal_num)
 
         # empty_weight_focal = torch.ones(self.num_vocal)
         # empty_weight_focal[self.num_bins+1:] = 0.
