@@ -146,7 +146,11 @@ class CocoDetection(torchvision.datasets.CocoDetection):
                 if min(masked_gaussian.shape) > 0 and min(masked_distribution.shape) > 0: 
                     distribution[center - low:center + high] = masked_gaussian
                 # print(masked_gaussian)
-                print(masked_gaussian.eq(1).float().sum())
+                if(masked_gaussian.eq(1).float().sum() < 1):
+                    print(gaussian)
+                    print(i, low, high, center, radius, width, height)
+                    print(masked_gaussian)
+                    exit(0)
                 # print(distribution)
                 # print(distribution.sum())
                 # exit(0)
