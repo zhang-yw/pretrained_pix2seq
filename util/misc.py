@@ -24,6 +24,7 @@ import torchvision
 #     from torchvision.ops import _new_empty_tensor
 #     from torchvision.ops.misc import _output_size
 
+from .tensorboard import TB
 
 class SmoothedValue(object):
     """Track a series of values and provide access to smoothed values over a
@@ -192,7 +193,7 @@ class MetricLogger(object):
     def add_meter(self, name, meter):
         self.meters[name] = meter
 
-    def log_every(self, iterable, print_freq, header=None):
+    def log_every(self, iterable, print_freq, header=None, tensorboard_freq=10):
         i = 0
         if not header:
             header = ''
@@ -239,6 +240,21 @@ class MetricLogger(object):
                         i, len(iterable), eta=eta_string,
                         meters=str(self),
                         time=str(iter_time), data=str(data_time)))
+
+            if i % tensorboard_freq == 0 or i == len(iterable) - 1:
+                # Logs to Tensorboard
+                TB.add_scalar("stats/data_time", data_time.avg)
+                TB.add_scalar("stats/iter_time", iter_time.avg)
+                TB.add_scalar("stats/eta", int(eta_seconds))
+                TB.add_scalar("stats/max_mem", int(torch.cuda.max_memory_allocated() / MB))
+
+                for k, v in self.meters.items():
+                    _i = k.find('_', k.find('_') + 1)
+                    if _i == -1: _k = k
+                    else: _k = k[:_i] + '/' + k
+                    TB.add_scalar(_k, v.avg)
+                # Tensorboard ends
+
             i += 1
             end = time.time()
         total_time = time.time() - start_time

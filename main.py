@@ -17,6 +17,7 @@ from engine import evaluate, train_one_epoch
 # from models import build_model
 from playground import build_all_model
 from timm.utils import NativeScaler
+from util.tensorboard import TB
 
 
 def get_args_parser():
@@ -104,6 +105,8 @@ def main(args):
     np.random.seed(seed)
     random.seed(seed)
 
+    TB.set_log_dir(args.output_dir)
+
     model, criterion, postprocessors = build_all_model[args.model](args)
     model.to(device)
 
@@ -176,6 +179,8 @@ def main(args):
         if 'ap' in checkpoint:
             cur_ap = checkpoint['ap']
             max_ap = checkpoint['max_ap']
+        if 'TB_iter' in checkpoint.keys():
+            TB.set_step(checkpoint['TB_iter'])
 
     if args.eval:
         test_stats, coco_evaluator = evaluate(model, criterion, postprocessors,
@@ -228,6 +233,7 @@ def main(args):
                     'args': args,
                     'ap': cur_ap,
                     'max_ap': max_ap,
+                    'TB_iter': TB._step,
                 }, checkpoint_path)
 
         if args.output_dir and utils.is_main_process():
