@@ -303,6 +303,9 @@ class SetCriterion(nn.Module):
         pos_loss = pos_loss.sum()
         neg_loss = neg_loss.sum()
 
+        num_pos  = pos_inds.float().sum()
+        print(num_pos)
+
         loss = loss - (pos_loss + neg_loss)
         # print(loss)
         # exit(0)
