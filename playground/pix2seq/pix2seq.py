@@ -202,8 +202,11 @@ class SetCriterion(nn.Module):
         
         ce_num = (target_seq > self.num_bins).sum()
         focal_num = num_pos - ce_num
+        empty_weight = torch.ones(self.num_vocal).to(target_seq.device)
+        empty_weight[-1] = self.eos_coef
+        empty_weight[0:1001] = 0.
 
-        loss_seq = F.cross_entropy(pred_seq_logits, target_seq, weight=self.empty_weight, reduction='sum') 
+        loss_seq = F.cross_entropy(pred_seq_logits, target_seq, weight=empty_weight, reduction='sum') 
         print(loss_seq, loss_seq/ce_num)
         loss_seq = loss_seq/ num_pos
 
