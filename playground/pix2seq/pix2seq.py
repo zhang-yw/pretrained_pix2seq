@@ -290,6 +290,8 @@ class SetCriterion(nn.Module):
         pos_inds = focal_target_seq.eq(1).float()
         neg_inds = focal_target_seq.lt(1).float()
         coordinate_inds = target_seq.lt(self.num_bins+1).float().unsqueeze(1)
+        coordinate_inds_2 = target_seq.gt(-0.5).float().unsqueeze(1)
+        coordinate_inds = coordinate_inds*coordinate_inds_2
         print(coordinate_inds.sum())
         neg_weights = torch.pow(1 - focal_target_seq, 4)
 
