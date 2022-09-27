@@ -287,7 +287,7 @@ class SetCriterion(nn.Module):
         return torch.stack(target_seq_list, dim=0)
 
     def focal_loss(self, pred_seq_logits, focal_target_seq, target_seq):
-        pos_inds = focal_target_seq.eq(1).float()
+        pos_inds = focal_target_seq.gt(0.99).float()
         neg_inds = focal_target_seq.lt(1).float()
         coordinate_inds = target_seq.lt(self.num_bins+1).float().unsqueeze(1)
         coordinate_inds_2 = target_seq.gt(-0.5).float().unsqueeze(1)
