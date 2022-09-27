@@ -199,8 +199,13 @@ class SetCriterion(nn.Module):
         else:
             pred_seq_logits = pred_seq_logits.reshape(-1, self.num_vocal)
             target_seq = target_seq.flatten()
+        
+        ce_num = (target_seq > self.num_bins).sum()
+        focal_num = num_pos - ce_num
 
-        loss_seq = F.cross_entropy(pred_seq_logits, target_seq, weight=self.empty_weight, reduction='sum') / num_pos
+        loss_seq = F.cross_entropy(pred_seq_logits, target_seq, weight=self.empty_weight, reduction='sum') 
+        print(loss_seq, loss_seq/ce_num)
+        loss_seq = loss_seq/ num_pos
 
         # Compute all the requested losses
         losses = dict()
