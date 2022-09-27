@@ -259,6 +259,7 @@ class SetCriterion(nn.Module):
                     masked_gaussian = gaussian[radius - low:radius + high]
                     if min(masked_gaussian.shape) > 0 and min(masked_distribution.shape) > 0: 
                         distribution[center - low:center + high] = masked_gaussian
+                    # print(masked_gaussian)
                     # print(distribution)
                     # print(distribution.sum())
                     # exit(0)
@@ -288,6 +289,11 @@ class SetCriterion(nn.Module):
 
     def focal_loss(self, pred_seq_logits, focal_target_seq, target_seq):
         pos_inds = focal_target_seq.eq(1).float()
+        pos_inds_2 = focal_target_seq.gt(0.99).float()
+        num_pos  = pos_inds.float().sum()
+        num_pos_2  = pos_inds_2.float().sum()
+        # print(num_pos, num_pos_2, pos_inds.shape)
+
         neg_inds = focal_target_seq.lt(1).float()
         coordinate_inds = target_seq.lt(self.num_bins+1).float().unsqueeze(1)
         coordinate_inds_2 = target_seq.gt(-0.5).float().unsqueeze(1)
@@ -302,6 +308,7 @@ class SetCriterion(nn.Module):
 
         pos_loss = pos_loss.sum()
         neg_loss = neg_loss.sum()
+
 
         loss = loss - (pos_loss + neg_loss)
         # print(loss)
