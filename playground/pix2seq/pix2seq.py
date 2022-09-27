@@ -290,7 +290,7 @@ class SetCriterion(nn.Module):
         pos_inds = focal_target_seq.eq(1).float()
         neg_inds = focal_target_seq.lt(1).float()
         coordinate_inds = target_seq.lt(self.num_bins+1).float().unsqueeze(1)
-
+        print(coordinate_inds.sum())
         neg_weights = torch.pow(1 - focal_target_seq, 4)
 
         loss = 0
@@ -356,13 +356,14 @@ class SetCriterion(nn.Module):
 
         ce_num = (target_seq > self.num_bins).sum()
         focal_num = num_pos - ce_num
+        print(num_pos, ce_num, focal_num)
 
         # empty_weight_focal = torch.ones(self.num_vocal)
         # empty_weight_focal[self.num_bins+1:] = 0.
 
         loss_seq = F.cross_entropy(pred_seq_logits, target_seq, weight=empty_weight, reduction='sum') 
         focal_loss = self.focal_loss(torch.clamp(pred_seq_logits.sigmoid(), min=1e-4, max=1-1e-4), focal_target_seq, target_seq)
-        print(loss_seq, focal_loss, loss_seq/ce_num, focal_loss/focal_num)
+        # print(loss_seq, focal_loss, loss_seq/ce_num, focal_loss/focal_num)
         loss_seq += focal_loss
         loss_seq = loss_seq/ num_pos
 
