@@ -241,8 +241,8 @@ class SetCriterion(nn.Module):
                     # gaussian = torch.from_numpy(gaussian)
                     # print(gaussian)
                     center = box[object][i]
-                    width = img_size_arr[1]
-                    height = img_size_arr[0]
+                    width = img_size_arr[1] + 1
+                    height = img_size_arr[0] + 1
                     # print(center)
                     # print(width)
                     # print(radius)
@@ -339,6 +339,14 @@ class SetCriterion(nn.Module):
             torch.distributed.all_reduce(num_pos)
         num_pos = torch.clamp(num_pos / get_world_size(), min=1).item()
 
+        num_ce = (target_seq > self.num_bins).sum()
+        num_ce = torch.as_tensor([num_ce], dtype=torch.float, device=self.device)
+        if is_dist_avail_and_initialized():
+            torch.distributed.all_reduce(num_ce)
+        num_ce = torch.clamp(num_ce / get_world_size(), min=1).item()
+
+        num_focal = num_pos - num_ce
+
         pred_seq_logits = outputs['pred_seq_logits']
         # print(pred_seq_logits[0])
         # exit(0)
@@ -362,9 +370,8 @@ class SetCriterion(nn.Module):
         empty_weight = torch.ones(self.num_vocal).to(self.device)
         empty_weight[-1] = self.eos_coef
         empty_weight[0:self.num_bins+1] = 0.
-        num_pos2 = (target_seq > -1).sum()
-        ce_num = (target_seq > self.num_bins).sum()
-        focal_num = num_pos2 - ce_num
+        # num_pos2 = (target_seq > -1).sum()
+        # ce_num = (target_seq > self.num_bins).sum()
         # print(num_pos2, ce_num, focal_num)
 
         # empty_weight_focal = torch.ones(self.num_vocal)
@@ -373,12 +380,14 @@ class SetCriterion(nn.Module):
         loss_seq = F.cross_entropy(pred_seq_logits, target_seq, weight=empty_weight, reduction='sum') 
         focal_loss = self.focal_loss(torch.clamp(pred_seq_logits.sigmoid(), min=1e-4, max=1-1e-4), focal_target_seq, target_seq)
         # print(loss_seq, focal_loss, loss_seq/ce_num, focal_loss/focal_num)
-        loss_seq += focal_loss
-        loss_seq = loss_seq/ num_pos
+        # loss_seq += focal_loss
+        loss_seq = loss_seq/ num_ce
+        focal_loss = focal_loss/ num_focal
 
         # Compute all the requested losses
         losses = dict()
-        losses["loss_seq"] = loss_seq
+        losses["loss_ce"] = loss_seq
+        losses["loss_focal"] = focal_loss
         return losses
 
 
@@ -466,7 +475,7 @@ def build(args):
         num_classes=num_classes,
         num_bins=num_bins)
 
-    weight_dict = {'loss_seq': 1}
+    weight_dict = {'loss_ce': 1, "loss_focal": 1}
     criterion = SetCriterion(
         num_classes,
         weight_dict,

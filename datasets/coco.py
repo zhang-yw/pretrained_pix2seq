@@ -127,8 +127,8 @@ class CocoDetection(torchvision.datasets.CocoDetection):
                 # gaussian = torch.from_numpy(gaussian)
                 # print(gaussian)
                 center = box[object][i]
-                width = img_size_arr[1]
-                height = img_size_arr[0]
+                width = img_size_arr[1] + 1
+                height = img_size_arr[0] + 1 
                 # print(center)
                 # print(width)
                 # print(radius)
