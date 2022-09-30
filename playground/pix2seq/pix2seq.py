@@ -365,7 +365,9 @@ class SetCriterion(nn.Module):
         # print(pred_seq_logits.shape)
         # print(target_seq.shape)
         # exit(0)
-
+        print(pred_seq_logits[0])
+        print(pred_seq_logits[0].sum())
+        exit()
         # self.empty_weight[0:self.num_bins+1] = 0.
         empty_weight = torch.ones(self.num_vocal).to(self.device)
         empty_weight[-1] = self.eos_coef
