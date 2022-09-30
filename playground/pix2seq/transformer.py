@@ -67,8 +67,8 @@ class Transformer(nn.Module):
         memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
         pre_kv = [torch.as_tensor([[], []], device=memory.device)
                   for _ in range(self.num_decoder_layers)]
-        print(input_seq.shape)
-        exit(0)
+        # print(input_seq.shape)
+        # exit(0)
 
         if self.training:
             input_embed = torch.cat(
