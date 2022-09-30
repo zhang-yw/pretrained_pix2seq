@@ -34,8 +34,13 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 rand_idx = torch.randperm(num_object).to(device)
                 targets[idx]["labels"] = targets[idx]["labels"][rand_idx]
                 targets[idx]["boxes"] = targets[idx]["boxes"][rand_idx]
-                targets[idx]["focal_target_seq"][:num_object] = targets[idx]["focal_target_seq"][rand_idx]
-                targets[idx]["target_seq"][:num_object] = targets[idx]["target_seq"][rand_idx]
+                rand_idx_seq = []
+                for i in range(num_object):
+                    for j in range(5):
+                        rand_idx_seq.append(rand_idx[i]+j)
+                rand_idx_seq = torch.tensor(rand_idx_seq)
+                targets[idx]["focal_target_seq"][:num_object*5] = targets[idx]["focal_target_seq"][rand_idx_seq]
+                targets[idx]["target_seq"][:num_object*5] = targets[idx]["target_seq"][rand_idx_seq]
 
         if amp_train:
             with torch.cuda.amp.autocast():
