@@ -377,17 +377,17 @@ class SetCriterion(nn.Module):
         # empty_weight_focal[self.num_bins+1:] = 0.
 
         loss_seq = F.cross_entropy(pred_seq_logits, target_seq, weight=empty_weight, reduction='sum') 
-        # focal_loss = self.focal_loss(torch.clamp(pred_seq_logits.sigmoid(), min=1e-4, max=1-1e-4), focal_target_seq, target_seq)
+        focal_loss = self.focal_loss(torch.clamp(pred_seq_logits.sigmoid(), min=1e-4, max=1-1e-4), focal_target_seq, target_seq)
         # print(loss_seq, focal_loss, loss_seq/ce_num, focal_loss/focal_num)
         # loss_seq += focal_loss
-        # loss_seq = loss_seq/ num_ce
-        loss_seq = loss_seq/ num_pos
-        # focal_loss = focal_loss/ num_focal
+        loss_seq = loss_seq/ num_ce
+        # loss_seq = loss_seq/ num_pos
+        focal_loss = focal_loss/ num_focal
 
         # Compute all the requested losses
         losses = dict()
         losses["loss_ce"] = loss_seq
-        # losses["loss_focal"] = focal_loss
+        losses["loss_focal"] = focal_loss
         return losses
 
 
@@ -478,8 +478,8 @@ def build(args):
         num_classes=num_classes,
         num_bins=num_bins)
 
-    # weight_dict = {'loss_ce': 1, "loss_focal": 1}
-    weight_dict = {'loss_ce': 1}
+    weight_dict = {'loss_ce': 1, "loss_focal": 1}
+    # weight_dict = {'loss_ce': 1}
     criterion = SetCriterion(
         num_classes,
         weight_dict,
