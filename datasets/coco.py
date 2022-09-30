@@ -105,6 +105,8 @@ class CocoDetection(torchvision.datasets.CocoDetection):
 
         label = label.unsqueeze(1) + self.num_bins + 1
         box = box * torch.stack([w, h, w, h], dim=0)
+        print(w, h)
+        exit(0)
         box = box_cxcywh_to_xyxy(box)
         box = (box / 640 * self.num_bins).floor().long().clamp(min=0, max=self.num_bins)
         width_arr  = box[:,2] - box[:,0]
