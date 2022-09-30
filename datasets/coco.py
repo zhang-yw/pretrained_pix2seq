@@ -185,6 +185,9 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         target_seq = self.build_target_seq(target)
         target["focal_target_seq"] = focal_target_seq
         target["target_seq"] = target_seq
+        print(target["target_seq"].shape)
+        print(target["focal_target_seq"].shape)
+        exit(0)
         return target 
 
 
