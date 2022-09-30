@@ -440,7 +440,7 @@ class PostProcess(nn.Module):
             result['labels'] = labels_per_image
             result['boxes'] = boxes_per_image
             results.append(result)
-        print(result[0]['boxes'][0])
+        print(result[0]['boxes'])
         exit(0)
         return results
 
