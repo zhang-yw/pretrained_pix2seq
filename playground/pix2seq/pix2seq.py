@@ -435,13 +435,13 @@ class PostProcess(nn.Module):
             scores_per_image, labels_per_image = torch.max(pred_class_logits, dim=1)
             boxes_per_image = pred_boxes_logits.argmax(dim=2) * 640 / self.num_bins
             boxes_per_image = boxes_per_image * scale_fct[b_i]
+            print(boxes_per_image)
+            exit(0)
             result = dict()
             result['scores'] = scores_per_image
             result['labels'] = labels_per_image
             result['boxes'] = boxes_per_image
             results.append(result)
-        print(result[0]['boxes'])
-        exit(0)
         return results
 
 
