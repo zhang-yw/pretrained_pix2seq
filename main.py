@@ -33,6 +33,8 @@ def get_args_parser():
     parser.add_argument('--amp_train', action='store_true', help='amp fp16 training or not')
     parser.add_argument('--eval_epoch', default=5, type=int)
 
+    parser.add_argument('--load_embed', default='', help='use pretrained embedding')
+
     # Pix2Seq
     parser.add_argument('--model', type=str, default="pix2seq",
                         help="specify the model from playground")
@@ -165,6 +167,13 @@ def main(args):
 
     output_dir = Path(args.output_dir)
     cur_ap = max_ap = 0.0
+
+    if args.load_embed:
+        checkpoint = torch.load(args.load_embed, map_location='cpu')
+        model_without_ddp.transformer.det_embed.weight.data.copy_(checkpoint['model']['transformer.det_embed.weight'])
+        model_without_ddp.transformer.vocal_embed.weight.data.copy_(checkpoint['model']['transformer.vocal_embed.weight'])
+
+
     if args.resume:
         if args.resume.startswith('https'):
             checkpoint = torch.hub.load_state_dict_from_url(
