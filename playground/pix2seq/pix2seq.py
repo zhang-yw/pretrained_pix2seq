@@ -478,7 +478,7 @@ def build(args):
         num_classes=num_classes,
         num_bins=num_bins)
 
-    weight_dict = {'loss_ce': 1, "loss_focal": 1}
+    weight_dict = {'loss_ce': 20, "loss_focal": 1}
     # weight_dict = {'loss_ce': 1}
     criterion = SetCriterion(
         num_classes,
