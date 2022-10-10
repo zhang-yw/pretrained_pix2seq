@@ -37,7 +37,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 rand_idx_seq = []
                 for i in range(num_object):
                     for j in range(5):
-                        rand_idx_seq.append(rand_idx[i]+j)
+                        rand_idx_seq.append(rand_idx[i]*5+j)
                 if num_object > 0:
                     rand_idx_seq = torch.stack(rand_idx_seq, dim=0).to(device)
                 # print(rand_idx_seq.dtype)
